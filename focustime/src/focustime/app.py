@@ -7,6 +7,7 @@ from toga.style.pack import COLUMN, ROW
 
 
 class FocusTime(toga.App):
+    """The main FocusTime application class"""
 
     def startup(self):
         """
@@ -22,6 +23,15 @@ class FocusTime(toga.App):
         self.main_window.content = main_box
         self.main_window.show()
 
+    @staticmethod
+    def test():
+        """Verify that static method can be called from test class.
+        
+        TODO: Remove this method when we have some real functionality to test.
+        """
+        return True
+
 
 def main():
+    """Instantiate the FocusTime application object."""
     return FocusTime()
