@@ -1,10 +1,14 @@
 """
 Time-keeping for people who need to focus
 """
+import datetime
+
 import toga
 from toga.style import Pack
 from toga.style.pack import COLUMN, ROW
-import datetime
+
+from focustime.segment import Segment
+from focustime.segmenttrackerbox import SegmentTrackerBox
 
 class FocusTime(toga.App):
     """The main FocusTime application class"""
@@ -21,13 +25,9 @@ class FocusTime(toga.App):
         # Build the main content box
         main_box = toga.Box(style=Pack(direction=COLUMN))
 
-        # Build a box for displaying the time
-        time_box = toga.Box(style=Pack(direction=ROW))
-        time_box.add(toga.Label("Time:"))
-        self.time_lbl = toga.Label("<the time>")
-        time_box.add(self.time_lbl)
-        
-        main_box.add(time_box)
+        # The box that tracks the progress of the current focus segment
+        self.segment_tracker_box = SegmentTrackerBox()
+        main_box.add(self.segment_tracker_box)
 
         # Build the main application window
         self.main_window = toga.MainWindow(title=self.formal_name)
@@ -42,16 +42,7 @@ class FocusTime(toga.App):
 
     def update_time(self):
         """Perform all actions associated with the progress of time."""
-        now = datetime.datetime.now()
-
-        self.time_lbl.text = "{}-{}-{} {}:{}:{}".format(
-            now.year,
-            now.month,
-            now.day,
-            now.hour,
-            now.minute,
-            now.second
-        )
+        self.segment_tracker_box.update()
 
     def process_in_background(self, widget):
         """Perform background processing tasks
@@ -62,15 +53,6 @@ class FocusTime(toga.App):
         while True:
             self.update_time()            
             yield 1
-
-    @staticmethod
-    def test():
-        """Verify that static method can be called from test class.
-        
-        TODO: Remove this method when we have some real functionality to test.
-        """
-        return True
-
 
 def main():
     """Instantiate the FocusTime application object."""
