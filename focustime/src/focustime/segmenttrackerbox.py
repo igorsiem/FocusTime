@@ -82,12 +82,12 @@ class SegmentTrackerBox(toga.Box):
             # Segment has been started - what stage are we at?
             now = datetime.datetime.now()
             if now >= self.segment.start and \
-                    now < self.segment.end_focus_time():
+                    now < self.segment.end_focus_time:
 
                 # Focus time
                 self.stage_lbl.text = "Focusing..."
 
-                time_to_go = self.segment.end_focus_time() - now
+                time_to_go = self.segment.end_focus_time - now
                 mins = int(time_to_go.seconds / 60)
                 secs = int(time_to_go.seconds % 60)
                 self.countdown_lbl.text = "{}m {}s".format(mins, secs)
@@ -97,12 +97,12 @@ class SegmentTrackerBox(toga.Box):
                 self.complete_btn.enabled = True
                 self.cancel_btn.enabled = True
 
-            elif now < self.segment.end_break_time():
+            elif now < self.segment.end_break_time:
 
                 # Break time
                 self.stage_lbl.text = "Break Time..."
 
-                time_to_go = self.segment.end_break_time() - now
+                time_to_go = self.segment.end_break_time - now
                 mins = int(time_to_go.seconds / 60)
                 secs = int(time_to_go.seconds % 60)
                 self.countdown_lbl.text = "{}m {}s".format(mins, secs)

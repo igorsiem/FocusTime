@@ -16,6 +16,7 @@ class Segment:
         self.duration = duration
         self.break_duration = break_duration
 
+    @property
     def end_focus_time(self):
         """Calculate the end of the focusing period (without the break).
         
@@ -27,19 +28,21 @@ class Segment:
         else:
             return None
 
+    @property
     def start_break_time(self):
         """Calculate the begining of the break time (same as end of the focus
         time)"""
-        return self.end_focus_time()
+        return self.end_focus_time
 
+    @property
     def end_break_time(self):
         """Calculate the end of the break time
                 
         `None` is returned if either the `start_break_time` or the `duration`
         are `Nones.
         """
-        if self.start_break_time() and self.break_duration:
-            return self.start_break_time() + self.break_duration
+        if self.start_break_time and self.break_duration:
+            return self.start_break_time + self.break_duration
         else:
             return None
 
