@@ -3,6 +3,7 @@ Declare and implement the SegementTrackerBox class.
 """
 
 import datetime
+from datetime import timedelta
 
 import toga
 from toga.style import Pack
@@ -49,7 +50,7 @@ class SegmentTrackerBox(toga.Box):
         self.add(button_box)
 
         # The segment object itself
-        self.segment = Segment(None, None, None)
+        self.segment = Segment()
 
         # Update the display items for the first time
         self.update()
@@ -58,74 +59,101 @@ class SegmentTrackerBox(toga.Box):
         """Start the current focus segment when the Start button is pressed."""
         self.start_segment()
 
-    def update(self):
-        """"Update the various UI elements based on the current time, and
-        state of the `segment` attribute
-        
-        TODO: put the state-related logic calculating times into the `Segment`
-        class
-        """
+    def set_stage_label_text(self):
+        """Set the 'stage' label with a human-readable description of the
+        state of the segment"""
 
-        # Has the segment been started?
-        if self.segment.start == None:
+        # What state is the segment in?
+        if self.segment.state == Segment.State.NOT_STARTED:
+            self.stage_lbl.text = "Time to Focus!"
+        elif self.segment.state == Segment.State.STARTED_FOCUS:
+            self.stage_lbl.text = "Focusing..."
+        elif self.segment.state == Segment.State.PAUSED_FOCUS:
+            self.stage_lbl.text = "Focusing - Paused"
+        elif self.segment.state == Segment.State.STARTED_BREAK:
+            self.stage_lbl.text = "On a break..."
+        elif self.segment.state == Segment.State.PAUSED_BREAK:
+            self.stage_lbl.text = "Break time - Paused"
+        elif self.segment.state == Segment.State.COMPLETED:
+            self.stage_lbl.text = "Done!"
+        else:
+            raise ValueError("unrecognised segment state")
 
-            self.stage_lbl.text = "Focus"
-            self.countdown_lbl.text = "not started..."
+    def set_countdown_label_text(self):
+        """Set the countdown label with the time remaining in the current stage
+        of the segment."""
 
+        if self.segment.state == Segment.State.NOT_STARTED:
+            self.countdown_lbl.text = "Not Started"
+        elif self.segment.state == Segment.State.STARTED_FOCUS or \
+                self.segment.state == Segment.State.STARTED_BREAK:
+            self.countdown_lbl.text = "{}m {}s".format( \
+                self.segment.minutes_remaining,
+                self.segment.seconds_of_minute_remaining)
+        elif self.segment.state == Segment.State.PAUSED_FOCUS or \
+                self.segment.state == Segment.State.PAUSED_BREAK:
+            NotImplementedError("support for pausing is not implemented yet")
+        elif self.segment.state == Segment.State.COMPLETED:
+            self.countdown_lbl.text = ""
+        else:
+            raise ValueError("unrecognised segment state")
+
+    def set_button_enablement(self):
+        """Set the enablement state of the buttons, depending on the state of
+        the segment."""
+        if self.segment.state == Segment.State.NOT_STARTED:
             self.start_btn.enabled = True
             self.pause_btn.enabled = False
             self.complete_btn.enabled = False
             self.cancel_btn.enabled = False
 
+        elif self.segment.state == Segment.State.STARTED_FOCUS:
+            self.start_btn.enabled = False
+            self.pause_btn.enabled = False
+            self.complete_btn.enabled = False
+            self.cancel_btn.enabled = False
+
+        elif self.segment.state == Segment.State.PAUSED_FOCUS:
+            self.start_btn.enabled = False
+            self.pause_btn.enabled = False
+            self.complete_btn.enabled = False
+            self.cancel_btn.enabled = False
+
+        elif self.segment.state == Segment.State.STARTED_BREAK:
+            self.start_btn.enabled = False
+            self.pause_btn.enabled = False
+            self.complete_btn.enabled = False
+            self.cancel_btn.enabled = False
+
+        elif self.segment.state == Segment.State.PAUSED_BREAK:
+            self.start_btn.enabled = False
+            self.pause_btn.enabled = False
+            self.complete_btn.enabled = False
+            self.cancel_btn.enabled = False
+
+        elif self.segment.state == Segment.State.COMPLETED:
+            self.start_btn.enabled = False
+            self.pause_btn.enabled = False
+            self.complete_btn.enabled = False
+            self.cancel_btn.enabled = False
+
         else:
+            raise ValueError("unrecognised segment state")
 
-            # Segment has been started - what stage are we at?
-            now = datetime.datetime.now()
-            if now >= self.segment.start and \
-                    now < self.segment.end_focus_time:
+    def update(self):
+        """"Update the various UI elements based on the current time, and
+        state of the segment."""
 
-                # Focus time
-                self.stage_lbl.text = "Focusing..."
-
-                time_to_go = self.segment.end_focus_time - now
-                mins = int(time_to_go.seconds / 60)
-                secs = int(time_to_go.seconds % 60)
-                self.countdown_lbl.text = "{}m {}s".format(mins, secs)
-
-                self.start_btn.enabled = False
-                self.pause_btn.enabled = True
-                self.complete_btn.enabled = True
-                self.cancel_btn.enabled = True
-
-            elif now < self.segment.end_break_time:
-
-                # Break time
-                self.stage_lbl.text = "Break Time..."
-
-                time_to_go = self.segment.end_break_time - now
-                mins = int(time_to_go.seconds / 60)
-                secs = int(time_to_go.seconds % 60)
-                self.countdown_lbl.text = "{}m {}s".format(mins, secs)
-
-                self.start_btn.enabled = False
-                self.pause_btn.enabled = True
-                self.complete_btn.enabled = True
-                self.cancel_btn.enabled = True
-
-            else:
-
-                # Done
-                self.stage_lbl.text = "Done!"
-                self.countdown_lbl.text = "0m 0s"
-
-                self.start_btn.enabled = False
-                self.pause_btn.enabled = False
-                self.complete_btn.enabled = False
-                self.cancel_btn.enabled = False
+        self.set_stage_label_text()
+        self.set_countdown_label_text()
+        self.set_button_enablement()
 
     def start_segment(self):
         """Start the focus segment by starting the `segment` object with the
         current time."""
 
-        self.segment.start_now()
+        #self.segment.begin(
+        #    duration=timedelta(seconds=20),
+        #    break_duration=timedelta(seconds=5))
+        self.segment.begin()
         self.update()
