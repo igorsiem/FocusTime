@@ -12,12 +12,17 @@ class TestSegment(unittest.TestCase):
     def test_segment(self):
         """Verify initialisation and basic calcs"""
 
-        # A single focus time segment, commencing on 2020-Feb-01 at 09:00:00,
-        # with a standard 25 minute duration plus a 5 minute break.
-        seg = Segment(
-            datetime(2020, 2, 1, 9, 0, 0),
-            timedelta(minutes=25),
-            timedelta(minutes=5))
+        # Everything is `None` when you first construct a segment
+        seg = Segment()
+
+        self.assertEqual(seg.end_focus_time, None)
+        self.assertEqual(seg.start_break_time, None)
+        self.assertEqual(seg.end_break_time, None)
+
+        # 'start' the segment
+        seg.begin(start=datetime(2020, 2, 1, 9, 0, 0),
+            duration=timedelta(minutes=25),
+            break_duration=timedelta(minutes=5))
 
         self.assertEqual(seg.end_focus_time, datetime(2020, 2, 1, 9, 25, 0))
         self.assertEqual(seg.start_break_time, datetime(2020, 2, 1, 9, 25, 0))
@@ -26,7 +31,7 @@ class TestSegment(unittest.TestCase):
     def test_null_attributes(self):
         """Verify segment behaviour when some of the attributes are None."""
 
-        seg = Segment(None, None, None)
+        seg = Segment()
         self.assertIsNone(seg.end_focus_time)
         self.assertIsNone(seg.start_break_time)
         self.assertIsNone(seg.end_break_time)
