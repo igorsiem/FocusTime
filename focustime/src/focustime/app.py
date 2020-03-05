@@ -1,6 +1,7 @@
 """
 Time-keeping for people who need to focus
 """
+import logging
 import datetime
 
 import toga
@@ -9,6 +10,9 @@ from toga.style.pack import COLUMN, ROW
 
 from focustime.segment import Segment
 from focustime.segmenttrackerbox import SegmentTrackerBox
+
+# TODO: set logging level from some kind of runtime config
+logging.basicConfig(level=logging.DEBUG)
 
 class FocusTime(toga.App):
     """The main FocusTime application class"""
@@ -39,6 +43,8 @@ class FocusTime(toga.App):
 
         # Set up background processing
         self.add_background_task(self.process_in_background)
+
+        logging.debug("FocusTime application started")
 
     def update_time(self):
         """Perform all actions associated with the progress of time."""

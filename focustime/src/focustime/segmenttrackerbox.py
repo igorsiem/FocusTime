@@ -144,6 +144,7 @@ class SegmentTrackerBox(toga.Box):
         """"Update the various UI elements based on the current time, and
         state of the segment."""
 
+        self.segment.update()
         self.set_stage_label_text()
         self.set_countdown_label_text()
         self.set_button_enablement()
