@@ -53,12 +53,12 @@ class TestSegment(unittest.TestCase):
         self.assertEqual(s.nominal_focus_duration, timedelta(minutes=25))
         self.assertEqual(s.nominal_break_duration, timedelta(minutes=5))
 
-    def test_total_focus_duration(self):
-        """Test the `total_focus_duration` property."""
+    def test_actual_focus_duration(self):
+        """Test the `actual_focus_duration` property."""
 
         # When a segment is first created, there is no focus time.
         s = Segment()
-        self.assertEqual(s.total_focus_duration, timedelta(seconds=0))
+        self.assertEqual(s.actual_focus_duration, timedelta(seconds=0))
 
         # Now the segment is 'in progress', with just a current time interval
         s.state = Segment.State.STARTED_FOCUS
@@ -66,9 +66,9 @@ class TestSegment(unittest.TestCase):
             Segment.Interval(
                 datetime(2020, 1, 1, 9, 0, 0), timedelta(minutes=5))
 
-        self.assertEqual(s.total_focus_duration, timedelta(minutes=5))
+        self.assertEqual(s.actual_focus_duration, timedelta(minutes=5))
 
-        # Now the segment has some other intervals in its collection
+        # Now the segment has some other focus intervals in its collection
         s.focus_intervals = [
             Segment.Interval(datetime(2020,1,1,9,0,0), timedelta(seconds=20)),
             Segment.Interval(datetime(2020,1,1,9,1,40), timedelta(seconds=20)),
@@ -79,7 +79,37 @@ class TestSegment(unittest.TestCase):
             Segment.Interval(
                 datetime(2020, 1, 1, 9, 3, 0), timedelta(seconds=10))
 
-        self.assertEqual(s.total_focus_duration, timedelta(seconds=70))
+        self.assertEqual(s.actual_focus_duration, timedelta(seconds=70))
+
+    def test_actual_break_duration(self):
+        """Test the `actual_break_duration` property."""
+
+        # When a segment is first created, there is no break time.
+        s = Segment()
+        self.assertEqual(timedelta(seconds=0), s.actual_break_duration)
+
+        # Now we're on a break, with just the current time interval
+        s.state = Segment.State.STARTED_BREAK
+        s.current_interval = Segment.Interval( \
+            datetime(2020, 1, 1, 9, 0, 0), timedelta(minutes=5))
+
+        self.assertEqual(s.actual_break_duration, timedelta(minutes=5))
+
+        # Now the segment has some other focus intervals in its collection
+        s.break_intervals = [
+            Segment.Interval(datetime(2020,1,1,9,0,0), timedelta(seconds=20)),
+            Segment.Interval(datetime(2020,1,1,9,1,40), timedelta(seconds=20)),
+            Segment.Interval(datetime(2020,1,1,9,2,0), timedelta(seconds=20)),
+        ]
+
+        s.current_interval = \
+            Segment.Interval(
+                datetime(2020, 1, 1, 9, 3, 0), timedelta(seconds=10))
+
+        self.assertEqual(s.actual_break_duration, timedelta(seconds=70))
+
+    def test_update_sequence(self):
+        self.assertTrue(False, "tests are incomplete")
 
     ###    def test_segment(self):
     ###        """Verify initialisation and basic calcs"""

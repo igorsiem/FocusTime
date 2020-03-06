@@ -51,8 +51,7 @@ class Segment:
             elif self == Segment.State.COMPLETED:
                 return "Completed"
             else:
-                raise ValueError(
-                    "Unrecognised state enumeration: {}".format(self))
+                return "Unrecognised state enumeration: {}".format(self.value)
 
     def __init__(self):
         """Initialise the segment with a starting date/time, a duration, and a
@@ -121,7 +120,7 @@ class Segment:
         self.nominal_break_duration = nominal_break_duration
 
     @property
-    def total_focus_duration(self):
+    def actual_focus_duration(self):
         """Retrieve the total Focus Time Duration for the Segment
         
         This is the sum of the Durations of all Focus Intervals in the Segment,
@@ -143,17 +142,16 @@ class Segment:
         return t
 
     @property
-    def total_break_duration(self):
+    def actual_break_duration(self):
         """Retrieve the total Break Time Duration for the Segment
         
         This is the sum of the Durations of all Break Intervals in the Segment,
         as well as the Current Interval, if the current status is Break or
         Paused Break.
-
-        TODO This property needs a test
         """
 
         t = timedelta(seconds=0)
+
         for i in self.break_intervals:
             t += i.duration
 
@@ -165,6 +163,16 @@ class Segment:
                 t += self.current_interval.duration
 
         return t
+
+    @property
+    def remaining_focus_duration(self):
+        """Calculate the remaining duration of focus time in this segment."""
+        return self.nominal_focus_duration - self.actual_focus_duration
+
+    @property
+    def remaining_break_duration(self):
+        """Calculate the remaining duration of break time in this segment."""
+        return self.nominal_break_duration - self.actual_break_duration
 
     ###@property
     ###def time_remaining(self):
@@ -203,12 +211,106 @@ class Segment:
             now = datetime.now()
 
         logging.debug("updated with now={}".format(now))
-        ###raise NotImplementedError("This method is not implemented yet")
+
+        # What phase are we in?
+        if self.state == Segment.State.NOT_STARTED:
+            # We haven't started focusing - nothing to see here...
+            pass
+
+        elif self.state == Segment.State.STARTED_FOCUS:
+            # We've started focusing. If there isn't a 'current interval', then
+            # create one - otherwise, just update the duration of the current
+            # interval
+            if self.current_interval == None:
+                self.current_interval = \
+                    Segment.Interval(now, timedelta(seconds=0))
+            else:
+                self.current_interval.duration = now-self.current_interval.start
+
+            # Have we reached the end of focus time? If so, move to our break
+            # time...
+            if self.actual_focus_duration >= self.nominal_focus_duration:
+                self.focus_intervals.append(self.current_interval)
+                self.current_interval = None
+                self.state = Segment.State.STARTED_BREAK
+
+            # TODO Consider a 'focus time finished' callback
+
+        elif self.state == Segment.State.PAUSED_FOCUS:
+            # We're in 'paused focus' mode. Nothing to do...
+            pass
+
+        elif self.state == Segment.State.STARTED_BREAK:
+            # We're on a break. If there isn't a 'current interval', then
+            # create one. Otherwise, just update the duration of the current
+            # interval.
+            if self.current_interval == None:
+                self.current_interval = \
+                    Segment.Interval(now, timedelta(seconds=0))
+            else:
+                self.current_interval.duration = now-self.current_interval.start
+
+            # Have we reached the end of our break time? If so, move to
+            # the 'completed' status.
+            if self.actual_break_duration >= self.nominal_break_duration:
+                self.break_intervals.append(self.current_interval)
+                self.current_interval = None
+                self.state = Segment.State.COMPLETED
+
+            # TOOD Consider a 'break time finished' callback
+
+        elif self.state == Segment.State.PAUSED_BREAK:
+            # We're on a break, but the break is paused. If there's a 'current
+            # interval, then move it to the focus intervals collection.
+            if self.current_interval:
+                self.break_intervals.append(self.current_interval)
+                self.current_interval = None
+
+        elif self.state == Segment.State.COMPLETED:
+            # We're done - there's nothing to do
+            pass
+
+        else:
+            # Whoops, not sure what we're doing
+            logging.warning("unrecognised state: {}".format(self.state))
 
     def pause(self):
-        raise NotImplementedError("This method is not implemented yet")
+        # We want to pause - what state are we in?
+        if self.state == Segment.State.STARTED_FOCUS:
+            # We've been (trying to) focus, so pause that.
+            self.state = Segment.State.PAUSED_FOCUS
+            if self.current_interval:
+                self.focus_intervals.append(self.current_interval)
+                self.current_interval = None
+            else:
+                logging.warning("pausing a focus interval, but there is no " \
+                    "current interval object")
+            
+        elif self.state == Segment.State.STARTED_BREAK:
+            # We were on a break, so pause that.
+            self.state = Segment.State.PAUSED_BREAK
+            if self.current_interval:
+                self.break_intervals.append(self.current_interval)
+                self.current_interval = None
+            else:
+                logging.warning("pausing a break interval, but there is no " \
+                    "current interval object")
+
+        else:
+            # We're not actually doing anything that can be paused - issue a
+            # warning.
+            logging.warning(
+                "attempting to pause from state \"{}\"".format(self.state))
 
     def complete(self):
+        #### We want to complete 'early' - what stage are we in right now?
+        ###if self.state == Segment.State.STARTED_FOCUS:
+        ###    if self.current_interval:
+        ###        self.focus_intervals.append(self.current_interval)
+        ###        self.current_interval = None
+        ###elif self.state == Segment.State.STARTED_BREAK:
+
+                
         raise NotImplementedError("This method is not implemented yet")
 
     def cancel(self):
