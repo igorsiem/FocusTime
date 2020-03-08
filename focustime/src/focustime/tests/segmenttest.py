@@ -109,6 +109,97 @@ class TestSegment(unittest.TestCase):
         self.assertEqual(s.actual_break_duration, timedelta(seconds=70))
 
     def test_update_sequence(self):
+        """Verify the various sequences that a Segment can undergo."""
+
+        # Segment is instantiated with nothing, and is then begun at 0900 on
+        # 1 Jan, 2020. Nominal focus and break durations are 25 minutes and
+        # 5 minutes respectively. We are now in the 'focusing' state
+        s = Segment()
+
+        s.begin(
+            start=datetime(2020,1,1,9,0,0),
+            nominal_focus_duration=timedelta(minutes=25),
+            nominal_break_duration=timedelta(minutes=5)
+        )
+
+        self.assertEqual(Segment.State.STARTED_FOCUS, s.state)
+
+        # Segment is updated 1 second later. At this point, we have focused for
+        # a total of 1 second, and have 24m 59s focus time left. No break time
+        # so far.
+        s.update(datetime(2020,1,1,9,0,1))
+
+        self.assertEqual(
+            timedelta(seconds=1),
+            s.actual_focus_duration)
+
+        self.assertEqual(
+            timedelta(minutes=24,seconds=59),
+            s.remaining_focus_duration)
+
+        self.assertEqual(
+            timedelta(seconds=0),
+            s.actual_break_duration)
+
+        self.assertEqual(
+            timedelta(minutes=5),
+            s.remaining_break_duration)
+
+        # Segment is updated after 10 minutes. Focus times have updated
+        # accordingly.
+        s.update(datetime(2020,1,1,9,10,0))
+
+        self.assertEqual(
+            timedelta(minutes=10),
+            s.actual_focus_duration)
+
+        self.assertEqual(
+            timedelta(minutes=15),
+            s.remaining_focus_duration)
+
+        # Now we pause. Focus times have not changed.
+        s.pause()
+
+        self.assertEqual(Segment.State.PAUSED_FOCUS, s.state)
+
+        self.assertEqual(
+            timedelta(minutes=10),
+            s.actual_focus_duration)
+
+        self.assertEqual(
+            timedelta(minutes=15),
+            s.remaining_focus_duration)
+
+        # Update after another minute (11 minutes). Focus times have not changed
+        # because we are paused.
+        s.update(datetime(2020,1,1,9,11,0))
+
+        self.assertEqual(Segment.State.PAUSED_FOCUS, s.state)
+
+        self.assertEqual(
+            timedelta(minutes=10),
+            s.actual_focus_duration)
+
+        self.assertEqual(
+            timedelta(minutes=15),
+            s.remaining_focus_duration)
+
+        # Now, unpause the Segment
+        s.unpause(datetime(2020,1,1,9,11,0))
+
+        self.assertEqual(Segment.State.STARTED_FOCUS, s.state)
+
+        # Update after another minute
+        s.update(datetime(2020,1,1,9,12,0))
+
+        self.assertEqual(
+            timedelta(minutes=11),
+            s.actual_focus_duration)
+
+        self.assertEqual(
+            timedelta(minutes=14),
+            s.remaining_focus_duration)
+
         self.assertTrue(False, "tests are incomplete")
 
     ###    def test_segment(self):

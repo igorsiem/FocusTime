@@ -4,13 +4,6 @@ from datetime import datetime, timedelta
 from enum import Enum
 
 class Segment:
-    """A single focusing time segment, with a start, duration, and break
-    duration
-
-    This class assumes that the break commences as soon as the focus time ends.
-
-    TODO: Update this
-    """
 
     class Interval:
         """A simple time interval, with a starting time and a duration"""
@@ -54,51 +47,12 @@ class Segment:
                 return "Unrecognised state enumeration: {}".format(self.value)
 
     def __init__(self):
-        """Initialise the segment with a starting date/time, a duration, and a
-        break duration.
-
-        TODO: Update this
-        """
-        ###self.start = None
-        ###self.duration = None
-        ###self.break_duration = None
-
         self.state = Segment.State.NOT_STARTED
         self.current_interval = None        # Interval currently in progress
         self.focus_intervals = []           # Actual focus intervals
         self.break_intervals = []           # Actual break intervals
         self.nominal_focus_duration = None  # How long we want to focus
         self.nominal_break_duration = None  # How long we want for a break
-
-    ###@property
-    ###def end_focus_time(self):
-    ###    """Calculate the end of the focusing period (without the break).
-    ###    
-    ###    Note that `None` is returned if either the `start` or `duration` are
-    ###    `None`.
-    ###    """
-    ###    if self.start and self.duration:
-    ###        return self.start + self.duration
-    ###    else:
-    ###        return None
-
-    ###@property
-    ###def start_break_time(self):
-    ###    """Calculate the begining of the break time (same as end of the focus
-    ###    time)."""
-    ###    return self.end_focus_time
-
-    ###@property
-    ###def end_break_time(self):
-    ###    """Calculate the end of the break time.
-    ###            
-    ###    `None` is returned if either the `start_break_time` or the `duration`
-    ###    are `Nones.
-    ###    """
-    ###    if self.start_break_time and self.break_duration:
-    ###        return self.start_break_time + self.break_duration
-    ###    else:
-    ###        return None
 
     def begin(self,
             start = datetime.now(),
@@ -174,38 +128,6 @@ class Segment:
         """Calculate the remaining duration of break time in this segment."""
         return self.nominal_break_duration - self.actual_break_duration
 
-    ###@property
-    ###def time_remaining(self):
-    ###    if self.state == Segment.State.NOT_STARTED:
-    ###        return None
-    ###    elif self.state == Segment.State.STARTED_FOCUS:
-    ###        return self.end_focus_time - datetime.now()
-    ###    elif self.state == Segment.State.STARTED_BREAK:
-    ###        return self.end_break_time - datetime.now()
-    ###    else:
-    ###        return timedelta(seconds=0)
-
-    ###@property
-    ###def minutes_remaining(self):
-    ###    """The number of whole minutes in the `time_remaining` property, or
-    ###    `None` if `time_remaining` returns `None`."""
-    ###    rem = self.time_remaining
-    ###    if rem:
-    ###        return int(rem.seconds / 60)
-    ###    else:
-    ###        return None
-
-    ###@property
-    ###def seconds_of_minute_remaining(self):
-    ###    """The number of seconds in the `time_remaining` property after
-    ###    subtracting the whole minutes, or `None`, if `time_remaining` returns
-    ###    `None`"""
-    ###    rem = self.time_remaining
-    ###    if rem:
-    ###        return rem.seconds % 60
-    ###    else:
-    ###        return None
-
     def update(self, now=None):
         if now == None:
             now = datetime.now()
@@ -229,6 +151,9 @@ class Segment:
 
             # Have we reached the end of focus time? If so, move to our break
             # time...
+            #
+            # TODO: Consider checking exactly when we transitioned from focus
+            # time to break time, and dividing the Interval exactly
             if self.actual_focus_duration >= self.nominal_focus_duration:
                 self.focus_intervals.append(self.current_interval)
                 self.current_interval = None
@@ -302,16 +227,42 @@ class Segment:
             logging.warning(
                 "attempting to pause from state \"{}\"".format(self.state))
 
-    def complete(self):
-        #### We want to complete 'early' - what stage are we in right now?
-        ###if self.state == Segment.State.STARTED_FOCUS:
-        ###    if self.current_interval:
-        ###        self.focus_intervals.append(self.current_interval)
-        ###        self.current_interval = None
-        ###elif self.state == Segment.State.STARTED_BREAK:
+    def unpause(self, now=None):
 
-                
-        raise NotImplementedError("This method is not implemented yet")
+        if now == None:
+            now = datetime.now()
+
+        if self.state == Segment.State.PAUSED_FOCUS:
+            self.state = Segment.State.STARTED_FOCUS
+        elif self.state == Segment.State.PAUSED_BREAK:
+            self.state = Segment.State.STARTED_BREAK
+        else:
+            logging.warning(
+                "attempting to un-pause from state \"{}\"".format(self.state))
+
+        self.current_interval = Segment.Interval(now, timedelta(seconds=0))
+
+    def complete(self):
+        # We want to complete 'early' - what stage are we in right now?
+        if self.state == Segment.State.STARTED_FOCUS:
+            if self.current_interval:
+                self.focus_intervals.append(self.current_interval)
+                self.current_interval = None
+        elif self.state == Segment.State.STARTED_BREAK:
+            if self.current_interval:
+                self.break_intervals.append(self.current_interval)
+                self.current_interval = None
+
+        self.state = Segment.State.COMPLETED
 
     def cancel(self):
-        raise NotImplementedError("This method is not implemented yet")    
+        # We want to abort - don't care what state we're in
+
+        self.state = Segment.State.NOT_STARTED
+
+        # Clear everything
+        self.current_interval = None
+        self.focus_intervals = []
+        self.break_intervals = []
+        self.nominal_focus_duration = None
+        self.nominal_break_duration = None
