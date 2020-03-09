@@ -129,6 +129,13 @@ class Segment:
         return self.nominal_break_duration - self.actual_break_duration
 
     def update(self, now=None):
+        """Update the segment state, based on the current time
+
+        TODO: Expand this document
+
+        TODO: This method is kinda long... consider refactoring and breaking up
+        this method into some smaller ones.
+        """
         if now == None:
             now = datetime.now()
 
@@ -151,12 +158,17 @@ class Segment:
 
             # Have we reached the end of focus time? If so, move to our break
             # time...
-            #
-            # TODO: Consider checking exactly when we transitioned from focus
-            # time to break time, and dividing the Interval exactly
             if self.actual_focus_duration >= self.nominal_focus_duration:
+
+                # How far into the break are we? Take that difference off the
+                # current interval (which is then added to the pool of focus
+                # intervals), and use it for the first part of the break.
+                diff = self.actual_focus_duration - self.nominal_focus_duration
+                self.current_interval.duration -= diff
                 self.focus_intervals.append(self.current_interval)
-                self.current_interval = None
+
+                self.current_interval = Segment.Interval(
+                    start=now-diff,duration=diff)
                 self.state = Segment.State.STARTED_BREAK
 
             # TODO Consider a 'focus time finished' callback
@@ -178,6 +190,12 @@ class Segment:
             # Have we reached the end of our break time? If so, move to
             # the 'completed' status.
             if self.actual_break_duration >= self.nominal_break_duration:
+
+                # How far past the end of the break are we? Subtract that from
+                # the duration of the current interval.
+                diff = self.actual_break_duration - self.nominal_break_duration
+                self.current_interval.duration -= diff
+
                 self.break_intervals.append(self.current_interval)
                 self.current_interval = None
                 self.state = Segment.State.COMPLETED

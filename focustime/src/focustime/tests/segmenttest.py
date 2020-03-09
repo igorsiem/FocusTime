@@ -108,8 +108,11 @@ class TestSegment(unittest.TestCase):
 
         self.assertEqual(s.actual_break_duration, timedelta(seconds=70))
 
-    def test_update_sequence(self):
-        """Verify the various sequences that a Segment can undergo."""
+    def test_normal_update_sequence(self):
+        """Verify the 'normal' sequence of updates that a Segment can undergo.
+        
+        TODO: This test is a bit long - can we break it up?
+        """
 
         # Segment is instantiated with nothing, and is then begun at 0900 on
         # 1 Jan, 2020. Nominal focus and break durations are 25 minutes and
@@ -200,51 +203,112 @@ class TestSegment(unittest.TestCase):
             timedelta(minutes=14),
             s.remaining_focus_duration)
 
-        self.assertTrue(False, "tests are incomplete")
+        # Update again, this time, we should be one second before the end of the
+        # focus period.
+        s.update(datetime(2020,1,1,9,25,59))
 
-    ###    def test_segment(self):
-    ###        """Verify initialisation and basic calcs"""
-    ###
-    ###        # Everything is `None` when you first construct a segment
-    ###        seg = Segment()
-    ###
-    ###        self.assertEqual(seg.end_focus_time, None)
-    ###        self.assertEqual(seg.start_break_time, None)
-    ###        self.assertEqual(seg.end_break_time, None)
-    ###
-    ###        # 'start' the segment
-    ###        seg.begin(start=datetime(2020, 2, 1, 9, 0, 0),
-    ###            duration=timedelta(minutes=25),
-    ###            break_duration=timedelta(minutes=5))
-    ###
-    ###        self.assertEqual(seg.end_focus_time, datetime(2020, 2, 1, 9, 25, 0))
-    ###        self.assertEqual(seg.start_break_time, datetime(2020, 2, 1, 9, 25, 0))
-    ###        self.assertEqual(seg.end_break_time, datetime(2020, 2, 1, 9, 30))
-    ###
-    ###    def test_null_attributes(self):
-    ###        """Verify segment behaviour when some of the attributes are None."""
-    ###
-    ###        seg = Segment()
-    ###        self.assertIsNone(seg.end_focus_time)
-    ###        self.assertIsNone(seg.start_break_time)
-    ###        self.assertIsNone(seg.end_break_time)
-    ###
-    ###        # When there's only a start time, everything is still None.
-    ###        seg.start = datetime(2020, 2, 1, 9, 0, 0)
-    ###        self.assertIsNone(seg.end_focus_time)
-    ###        self.assertIsNone(seg.start_break_time)
-    ###        self.assertIsNone(seg.end_break_time)
-    ###
-    ###        # When there's a start time and a duration, there's an end focus time
-    ###        # and a start break time, but still no end break time.
-    ###        seg.duration = timedelta(minutes=25)
-    ###        self.assertIsNotNone(seg.end_focus_time)
-    ###        self.assertIsNotNone(seg.start_break_time)
-    ###        self.assertIsNone(seg.end_break_time)
-    ###
-    ###        # When there's a break duration as well, all calculated values are not
-    ###        # None.
-    ###        seg.break_duration = timedelta(minutes=5)
-    ###        self.assertIsNotNone(seg.end_focus_time)
-    ###        self.assertIsNotNone(seg.start_break_time)
-    ###        self.assertIsNotNone(seg.end_break_time)
+        self.assertEqual(Segment.State.STARTED_FOCUS, s.state)
+
+        self.assertEqual(
+            timedelta(minutes=24,seconds=59),
+            s.actual_focus_duration)
+
+        self.assertEqual(
+            timedelta(minutes=0,seconds=1),
+            s.remaining_focus_duration)
+
+        # Update one second later - now we're in break time (just).
+        s.update(datetime(2020,1,1,9,26,0))
+
+        self.assertEqual(Segment.State.STARTED_BREAK, s.state)
+
+        self.assertEqual(
+            timedelta(minutes=25),
+            s.actual_focus_duration)
+
+        self.assertEqual(
+            timedelta(minutes=0),
+            s.remaining_focus_duration)
+
+        self.assertEqual(
+            timedelta(minutes=0),
+            s.actual_break_duration)
+
+        self.assertEqual(
+            timedelta(minutes=5),
+            s.remaining_break_duration)
+
+        # Update 2m 30s into the break
+        s.update(datetime(2020,1,1,9,28,30))
+
+        self.assertEqual(Segment.State.STARTED_BREAK, s.state)
+
+        self.assertEqual(
+            timedelta(minutes=2,seconds=30),
+            s.actual_break_duration)
+
+        self.assertEqual(
+            timedelta(minutes=2,seconds=30),
+            s.remaining_break_duration)
+
+        # Pause the break.
+        s.pause()
+        self.assertEqual(Segment.State.PAUSED_BREAK, s.state)
+
+        # 2 minutes later, we still have the same durationss
+        s.update(datetime(2020,1,1,9,30,30))
+
+        self.assertEqual(Segment.State.PAUSED_BREAK, s.state)
+        self.assertEqual(
+            timedelta(minutes=2,seconds=30),
+            s.actual_break_duration)
+
+        self.assertEqual(
+            timedelta(minutes=2,seconds=30),
+            s.remaining_break_duration)
+
+        # Un-pause and continue to one second before the end of the break.
+        s.unpause(now=datetime(2020,1,1,9,30,30))
+
+        s.update(datetime(2020,1,1,9,32,59))
+        self.assertEqual(Segment.State.STARTED_BREAK, s.state)
+
+        self.assertEqual(
+            timedelta(minutes=4,seconds=59),
+            s.actual_break_duration)
+
+        self.assertEqual(
+            timedelta(minutes=0,seconds=1),
+            s.remaining_break_duration)
+
+        # A second later, everything is finished
+        s.update(now=datetime(2020,1,1,9,33,0))
+        self.assertEqual(Segment.State.COMPLETED, s.state)
+
+        self.assertEqual(
+            timedelta(minutes=25),
+            s.actual_focus_duration)
+
+        self.assertEqual(
+            timedelta(minutes=0),
+            s.remaining_focus_duration)
+
+        self.assertEqual(
+            timedelta(minutes=5),
+            s.actual_break_duration)
+
+        self.assertEqual(
+            timedelta(minutes=0),
+            s.remaining_break_duration)
+
+        ###self.assertTrue(False, "tests are incomplete")
+
+    def test_premature_completion(self):
+        """Test sequence where a Segment is 'manually' completed before it's
+        nominal time."""
+        self.assertTrue(False, "test not implemented yet")
+
+    def test_cancellation(self):
+        """Test sequence for a Segment being cancelled before it is
+        completed."""
+        self.assertTrue(False, "test not implemented yet")
