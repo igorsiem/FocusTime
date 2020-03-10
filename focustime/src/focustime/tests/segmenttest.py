@@ -306,9 +306,62 @@ class TestSegment(unittest.TestCase):
     def test_premature_completion(self):
         """Test sequence where a Segment is 'manually' completed before it's
         nominal time."""
-        self.assertTrue(False, "test not implemented yet")
+
+        # Segment can be completed before it is even begun.
+        segment = Segment()
+        segment.complete()
+
+        self.assertEqual(Segment.State.COMPLETED, segment.state)
+
+        # Segment can be manually completed after focus time has started but
+        # not finished.
+        segment = Segment()
+        segment.begin(start=datetime(2020,1,1,9,0,0))
+        segment.update(datetime(2020,1,1,9,1,0))
+        segment.complete()
+
+        self.assertEqual(Segment.State.COMPLETED, segment.state)
+        self.assertEqual(timedelta(minutes=1), segment.actual_focus_duration)
+        self.assertEqual(timedelta(seconds=0), segment.actual_break_duration)
+
+        # Segment can be completed after the break has begun, but not finished.
+        segment = Segment()
+        segment.begin(start=datetime(2020,1,1,9,0,0))
+        segment.update(datetime(2020,1,1,9,26,0))
+
+        self.assertEqual(Segment.State.STARTED_BREAK, segment.state)
+
+        segment.complete()
+
+        self.assertEqual(Segment.State.COMPLETED, segment.state)
+        self.assertEqual(timedelta(minutes=25), segment.actual_focus_duration)
+        self.assertEqual(timedelta(minutes=1), segment.actual_break_duration)
 
     def test_cancellation(self):
         """Test sequence for a Segment being cancelled before it is
         completed."""
-        self.assertTrue(False, "test not implemented yet")
+
+        # Segment can be manually cancelled after focus time has started but
+        # not finished.
+        segment = Segment()
+        segment.begin(start=datetime(2020,1,1,9,0,0))
+        segment.update(datetime(2020,1,1,9,1,0))
+
+        segment.cancel()
+
+        self.assertEqual(Segment.State.NOT_STARTED, segment.state)
+        self.assertEqual(timedelta(seconds=0), segment.actual_focus_duration)
+        self.assertEqual(timedelta(seconds=0), segment.actual_break_duration)
+
+        # Segment can be cancelled after the break has begun, but not finished.
+        segment = Segment()
+        segment.begin(start=datetime(2020,1,1,9,0,0))
+        segment.update(datetime(2020,1,1,9,26,0))
+
+        self.assertEqual(Segment.State.STARTED_BREAK, segment.state)
+
+        segment.cancel()
+
+        self.assertEqual(Segment.State.NOT_STARTED, segment.state)
+        self.assertEqual(timedelta(seconds=0), segment.actual_focus_duration)
+        self.assertEqual(timedelta(seconds=0), segment.actual_break_duration)
