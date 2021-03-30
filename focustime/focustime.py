@@ -62,4 +62,7 @@ class FocusTime(toga.App):
 
 def main():
     """Instantiate the FocusTime application object."""
-    return FocusTime()
+    return FocusTime('FocusTime', "com.technopraxia.focustime")
+
+if __name__ == '__main__':
+    main().main_loop()

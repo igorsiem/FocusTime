@@ -1,3 +1,20 @@
 {
-    "python.pythonPath": "venv\\Scripts\\python.exe"
+
+    // Python environment in venv
+    "python.pythonPath": "${workspaceFolder}/venv/Scripts/python.exe",
+
+    // Spelling
+    "cSpell.words": [
+        "focustime",
+        "pytest"
+    ],
+
+    // Pytest settings
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.nosetestsEnabled": false,
+    "python.testing.pytestEnabled": true,
+
 }

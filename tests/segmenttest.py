@@ -1,13 +1,5 @@
-"""
-Test the FocusDay class.
-"""
-
-import unittest
 from datetime import datetime, timedelta
 from focustime.segment import Segment
-
-class TestSegment(unittest.TestCase):
-    """Verify the functionality of the Segment class."""
 
     def test_interval(self):
         """Verify the operation of the Segment.Interval class."""
