@@ -42,8 +42,11 @@ class SegmentTrackerBox(toga.Box):
             on_press=self.on_start_btn_press)
         self.pause_btn = toga.Button("Pause", enabled=False,
             on_press=self.on_pause_btn_press)
-        self.complete_btn = toga.Button("Complete", enabled=False)
-        self.cancel_btn = toga.Button("Cancel", enabled=False)
+        self.complete_btn = toga.Button("Complete", enabled=False,
+            on_press=self.on_complete_btn_press)
+        self.cancel_btn = toga.Button("Cancel", enabled=False,
+            on_press=self.on_cancel_btn_press)
+
         button_box.add(self.start_btn)
         button_box.add(self.pause_btn)
         button_box.add(self.complete_btn)
@@ -73,6 +76,22 @@ class SegmentTrackerBox(toga.Box):
         """
         self.pause_or_continue_segment()
 
+    def on_complete_btn_press(self, widget):
+        """Complete the current segment, when the Complete button is clicked
+
+        Args:
+            widget (Widget): The control that sent the signal
+        """
+        self.complete_segment()
+
+    def on_cancel_btn_press(self, widget):
+        """Cancel the current segment, when the Cancel button is clicked
+
+        Args:
+            widget (Widget): The control that sent the signal
+        """
+        self.cancel_segment()
+
     def set_stage_label_text(self):
         """Set the 'stage' label with a human-readable description of the
         state of the segment"""
@@ -95,12 +114,15 @@ class SegmentTrackerBox(toga.Box):
 
     def set_countdown_label_text(self):
         """Set the countdown label with the time remaining in the current stage
-        of the segment."""
+        of the segment.
+        """
 
         if self.segment.state == Segment.State.NOT_STARTED:
             self.countdown_lbl.text = "Not Started"
         elif self.segment.state == Segment.State.STARTED_FOCUS or \
-                self.segment.state == Segment.State.STARTED_BREAK:
+                self.segment.state == Segment.State.STARTED_BREAK or \
+                self.segment.state == Segment.State.PAUSED_FOCUS or \
+                self.segment.state == Segment.State.PAUSED_BREAK:
 
             dur = self.segment.remaining_focus_duration
             if self.segment.state == Segment.State.STARTED_BREAK:
@@ -110,9 +132,6 @@ class SegmentTrackerBox(toga.Box):
                 int(dur.total_seconds() / 60),
                 int(dur.total_seconds() % 60))
                 
-        elif self.segment.state == Segment.State.PAUSED_FOCUS or \
-                self.segment.state == Segment.State.PAUSED_BREAK:
-            NotImplementedError("support for pausing is not implemented yet")
         elif self.segment.state == Segment.State.COMPLETED:
             self.countdown_lbl.text = ""
         else:
@@ -132,29 +151,29 @@ class SegmentTrackerBox(toga.Box):
             self.start_btn.enabled = False
             self.pause_btn.enabled = True
             self.pause_btn.label = "Pause"
-            self.complete_btn.enabled = False
-            self.cancel_btn.enabled = False
+            self.complete_btn.enabled = True
+            self.cancel_btn.enabled = True
 
         elif self.segment.state == Segment.State.PAUSED_FOCUS:
             self.start_btn.enabled = False
             self.pause_btn.enabled = True
             self.pause_btn.label = "Continue"
-            self.complete_btn.enabled = False
-            self.cancel_btn.enabled = False
+            self.complete_btn.enabled = True
+            self.cancel_btn.enabled = True
 
         elif self.segment.state == Segment.State.STARTED_BREAK:
             self.start_btn.enabled = False
             self.pause_btn.enabled = True
             self.pause_btn.label = "Pause"
-            self.complete_btn.enabled = False
-            self.cancel_btn.enabled = False
+            self.complete_btn.enabled = True
+            self.cancel_btn.enabled = True
 
         elif self.segment.state == Segment.State.PAUSED_BREAK:
             self.start_btn.enabled = False
             self.pause_btn.enabled = True
             self.pause_btn.label = "Continue"
-            self.complete_btn.enabled = False
-            self.cancel_btn.enabled = False
+            self.complete_btn.enabled = True
+            self.cancel_btn.enabled = True
 
         elif self.segment.state == Segment.State.COMPLETED:
             self.start_btn.enabled = False
@@ -168,7 +187,11 @@ class SegmentTrackerBox(toga.Box):
 
     def update(self):
         """"Update the various UI elements based on the current time, and
-        state of the segment."""
+        state of the segment.
+
+        TODO When a segment has been completed, we need to store it, and
+        prepare for another segment
+        """
 
         self.segment.update()
         self.set_stage_label_text()
@@ -192,4 +215,20 @@ class SegmentTrackerBox(toga.Box):
                 self.segment.state == Segment.State.PAUSED_BREAK):
             self.segment.unpause()
             
+        self.update()
+
+    def complete_segment(self):
+        """Mark the current segment as completed, no matter where we are in
+        the segmennt
+
+        TODO When a segment has been completed, we need to store it, and
+        prepare for another segment
+        """
+        self.segment.complete()
+        self.update()
+
+    def cancel_segment(self):
+        """Cancel the progress of a current segment
+        """
+        self.segment.cancel()
         self.update()
