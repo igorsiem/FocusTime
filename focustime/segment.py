@@ -2,23 +2,45 @@ import logging
 import datetime
 from datetime import datetime, timedelta
 from enum import Enum
+import threading
 
 class Segment:
+    """A single session of focusing time
+
+    This class encapsulates all the information recorded about a single
+    session of focusing, along with the break that occurs afterwards. It
+    maintains collections of `Interval` objects, which are contiguous time
+    segments (`start` and `duration`)
+    """
 
     class Interval:
-        """A simple time interval, with a starting time and a duration"""
+        """A simple time interval, with a starting time and a duration
+        """
+
         def __init__(self, start=None,duration=None):
+            """Initialise the Interval object
+
+            Args:
+                start (datetime, optional): The starting time for the
+                    Interval. Defaults to None.
+                duration (timedelta, optional): The duration of the Interval.
+                    Defaults to None.
+            """
             self.start = start
             self.duration = duration
 
         @property
         def end(self):
-            """Retrieve the end time of the Interval, which is the start plus
-            the duration"""
+            """Retrieve the end time of the Interval
+
+            Returns:
+                datetime: The end time of the Interval
+            """
             return self.start + self.duration
 
     class State(Enum):
-        """The different states for the segment"""
+        """The different states for the segment
+        """
         NOT_STARTED = 0
         STARTED_FOCUS = 1
         PAUSED_FOCUS = 2
@@ -47,6 +69,10 @@ class Segment:
                 return "Unrecognised state enumeration: {}".format(self.value)
 
     def __init__(self):
+        """Initialise the Segment to null values
+
+        Note that items like nominal durations are set when `begin` is called.
+        """
         self.state = Segment.State.NOT_STARTED
         self.current_interval = None        # Interval currently in progress
         self.focus_intervals = []           # Actual focus intervals
@@ -58,6 +84,16 @@ class Segment:
             start = datetime.now(),
             nominal_focus_duration=timedelta(minutes=25),
             nominal_break_duration=timedelta(minutes=5)):
+        """Commence the focusing segment
+
+        Args:
+            start (datetime, optional): The starting time of the segment.
+                Defaults to datetime.now().
+            nominal_focus_duration (timedelta, optional): How long we want to
+                focus for. Defaults to timedelta(minutes=25).
+            nominal_break_duration (timedelta, optional): How long we want to
+                take for a break. Defaults to timedelta(minutes=5).
+        """
 
         if self.state != Segment.State.NOT_STARTED:
             logging.warning("called `begin` on `Segment` object when state " \
@@ -77,9 +113,9 @@ class Segment:
     def actual_focus_duration(self):
         """Retrieve the total Focus Time Duration for the Segment
         
-        This is the sum of the Durations of all Focus Intervals in the Segment,
-        as well as the Current Interval if the current status is Focusing or
-        Paused Focusing.
+        This is the sum of the Durations of all Focus Intervals in the
+        Segment, as well as the Current Interval if the current status is
+        Focusing or Paused Focusing.
         """
 
         t = timedelta(seconds=0)
@@ -99,9 +135,9 @@ class Segment:
     def actual_break_duration(self):
         """Retrieve the total Break Time Duration for the Segment
         
-        This is the sum of the Durations of all Break Intervals in the Segment,
-        as well as the Current Interval, if the current status is Break or
-        Paused Break.
+        This is the sum of the Durations of all Break Intervals in the
+        Segment, as well as the Current Interval, if the current status is
+        Break or Paused Break.
         """
 
         t = timedelta(seconds=0)
@@ -120,12 +156,14 @@ class Segment:
 
     @property
     def remaining_focus_duration(self):
-        """Calculate the remaining duration of focus time in this segment."""
+        """Calculate the remaining duration of focus time in this segment.
+        """
         return self.nominal_focus_duration - self.actual_focus_duration
 
     @property
     def remaining_break_duration(self):
-        """Calculate the remaining duration of break time in this segment."""
+        """Calculate the remaining duration of break time in this segment.
+        """
         return self.nominal_break_duration - self.actual_break_duration
 
     def update(self, now=None):
@@ -218,6 +256,12 @@ class Segment:
             logging.warning("unrecognised state: {}".format(self.state))
 
     def pause(self):
+        """Trigger a pause in the focusing Segment
+
+        This method may be invoked when either the focusing time or the break
+        time has been started. Internally, it closes off the current Interval
+        object, and adds it to the relevant intervals collection.
+        """
         # We want to pause - what state are we in?
         if self.state == Segment.State.STARTED_FOCUS:
             # We've been (trying to) focus, so pause that.
@@ -246,6 +290,12 @@ class Segment:
                 "attempting to pause from state \"{}\"".format(self.state))
 
     def unpause(self, now=None):
+        """Continue the Segment after pausing (either in focusing time, or
+        break time)
+
+        Args:
+            now (datetime, optional): The current time. Defaults to None.
+        """
 
         if now == None:
             now = datetime.now()
@@ -261,6 +311,12 @@ class Segment:
         self.current_interval = Segment.Interval(now, timedelta(seconds=0))
 
     def complete(self):
+        """Signal early completion of a Segment
+
+        This method moves the Segment straight to the `COMPLETED` state, no
+        matter what. It makes sure any current Interval object will be
+        properly added to the right collection.
+        """
         # We want to complete 'early' - what stage are we in right now?
         if self.state == Segment.State.STARTED_FOCUS:
             if self.current_interval:
@@ -274,6 +330,10 @@ class Segment:
         self.state = Segment.State.COMPLETED
 
     def cancel(self):
+        """This method aborts the Segment no matter what
+
+        All information is discarded and cleared.
+        """
         # We want to abort - don't care what state we're in
 
         self.state = Segment.State.NOT_STARTED
