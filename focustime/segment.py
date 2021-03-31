@@ -2,23 +2,36 @@ import logging
 import datetime
 from datetime import datetime, timedelta
 from enum import Enum
+import threading
 
 class Segment:
 
     class Interval:
-        """A simple time interval, with a starting time and a duration"""
+        """A simple time interval, with a starting time and a duration
+        """
+
         def __init__(self, start=None,duration=None):
+            """Initialise the Interval object
+
+            Args:
+                start (datetime, optional): The starting time for the Interval. Defaults to None.
+                duration (timedelta, optional): The durection of the Interface. Defaults to None.
+            """
             self.start = start
             self.duration = duration
 
         @property
         def end(self):
-            """Retrieve the end time of the Interval, which is the start plus
-            the duration"""
+            """Retrieve the end time of the Interval
+
+            Returns:
+                datetime: The end time of the Interval
+            """
             return self.start + self.duration
 
     class State(Enum):
-        """The different states for the segment"""
+        """The different states for the segment
+        """
         NOT_STARTED = 0
         STARTED_FOCUS = 1
         PAUSED_FOCUS = 2

@@ -1,7 +1,7 @@
 import sys
-sys.path.insert(0, '../focustime')
-
 from datetime import datetime, timedelta
+
+sys.path.insert(0, '../focustime')
 from focustime.segment import Segment
 
 def test_interval():

@@ -3,6 +3,8 @@ Time-keeping for people who need to focus
 """
 import logging
 import datetime
+import threading
+import time
 
 import toga
 from toga.style import Pack
@@ -15,15 +17,11 @@ from focustime.segmenttrackerbox import SegmentTrackerBox
 logging.basicConfig(level=logging.DEBUG)
 
 class FocusTime(toga.App):
-    """The main FocusTime application class"""
+    """The main FocusTime application class
+    """
 
     def startup(self):
-        """
-        Construct and show the Toga application.
-
-        Usually, you would add your application to a main content box.
-        We then create a main window (with a name matching the app), and
-        show the main window.
+        """Construct and show the Toga application.
         """
 
         # Build the main content box
@@ -41,24 +39,29 @@ class FocusTime(toga.App):
         # Perform first time-related updates
         self.update_time()
 
-        # Set up background processing
-        self.add_background_task(self.process_in_background)
+        # Set up background processing with a timer.
+        self.timer = threading.Timer(1.0, self.process_in_background)
+        self.timer.start()
 
         logging.debug("FocusTime application started")
 
     def update_time(self):
-        """Perform all actions associated with the progress of time."""
+        """Perform all actions associated with the progress of time.
+        """
         self.segment_tracker_box.update()
 
-    def process_in_background(self, widget):
+    def process_in_background(self):
         """Perform background processing tasks
         
-        This method is called for background processing functionality, like
-        time updates.
+        This method is called when `self.timer` fires, and is used for
+        background processing functionality, like time updates. In the
+        current iteration, it only calls `update_time`. It also re-creates
+        `self.timer`.
         """
-        while True:
-            self.update_time()            
-            yield 1
+        self.update_time()
+
+        self.timer = threading.Timer(1.0, self.process_in_background)
+        self.timer.start()
 
 def main():
     """Instantiate the FocusTime application object."""
