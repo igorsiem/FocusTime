@@ -2,7 +2,7 @@ import sys
 from datetime import datetime, timedelta
 
 sys.path.insert(0, '../focustime')
-from focustime.segment import Segment
+from focustime.models.segment import Segment
 
 def test_interval():
     """Verify the operation of the Segment.Interval class."""

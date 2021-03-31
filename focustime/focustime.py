@@ -1,6 +1,6 @@
+"""Time-keeping for people who need to focus
 """
-Time-keeping for people who need to focus
-"""
+
 import logging
 import datetime
 import threading
@@ -10,8 +10,8 @@ import toga
 from toga.style import Pack
 from toga.style.pack import COLUMN, ROW
 
-from focustime.segment import Segment
-from focustime.segmenttrackerbox import SegmentTrackerBox
+from focustime.models.segment import Segment
+from focustime.views.segmenttrackerbox import SegmentTrackerBox
 
 # TODO: set logging level from some kind of runtime config
 logging.basicConfig(level=logging.DEBUG)

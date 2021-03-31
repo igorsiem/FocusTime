@@ -9,7 +9,7 @@ import toga
 from toga.style import Pack
 from toga.style.pack import COLUMN, ROW
 
-from focustime.segment import Segment
+from focustime.models.segment import Segment
 
 class SegmentTrackerBox(toga.Box):
     """A Toga Box class with UI elements for running a single focus segment
