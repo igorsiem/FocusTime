@@ -87,9 +87,15 @@ class SegmentTrackerBox(toga.Box):
             self.countdown_lbl.text = "Not Started"
         elif self.segment.state == Segment.State.STARTED_FOCUS or \
                 self.segment.state == Segment.State.STARTED_BREAK:
+
+            dur = self.segment.remaining_focus_duration
+            if self.segment.state == Segment.State.STARTED_BREAK:
+                dur = self.segment.remaining_break_duration
+
             self.countdown_lbl.text = "{}m {}s".format( \
-                self.segment.minutes_remaining,
-                self.segment.seconds_of_minute_remaining)
+                int(dur.total_seconds() / 60),
+                int(dur.total_seconds() % 60))
+                
         elif self.segment.state == Segment.State.PAUSED_FOCUS or \
                 self.segment.state == Segment.State.PAUSED_BREAK:
             NotImplementedError("support for pausing is not implemented yet")
