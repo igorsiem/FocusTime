@@ -1,20 +1,32 @@
-import sys
 from datetime import datetime, timedelta
 
+import sys
 sys.path.insert(0, '../focustime')
+
 from focustime.models.segment import Segment
 
 def test_interval():
-    """Verify the operation of the Segment.Interval class."""
+    """Verify the operation of the Segment.Interval class
 
-    i = Segment.Interval(
-        start=datetime(2020,1,1,9,0,0),
-        duration=timedelta(minutes=10))
+    1. An `Interval` can be instantiated with a `start` and a `duration`.
 
-    assert i.end == datetime(2020,1,1,9,10,0)
+    2. An `Interval` has an `end` property, which returns the sum of the
+       `start` and `duration` attributes.
+    """
+
+    s = datetime(2020,1,1,9,0,0)
+    d = timedelta(minutes=10)
+
+    i = Segment.Interval(start=s, duration=d)
+    assert i.start == s
+    assert i.duration == d
+    assert i.end == s+d
 
 def test_instantiation():
-    """Verify Segment instantiation"""
+    """Verify Segment instantiation
+    
+    TODO Update with acceptance criteria
+    """
 
     s = Segment()
 
@@ -26,7 +38,10 @@ def test_instantiation():
     assert s.nominal_break_duration == None
 
 def test_begin():
-    """Verify the working of the `begin` method."""
+    """Verify the working of the `begin` method
+    
+    TODO Update with acceptance criteria
+    """
 
     # Create a Segment object, and "begin" it from a specified time
     s = Segment()
@@ -50,7 +65,10 @@ def test_begin():
     assert s.nominal_break_duration == timedelta(minutes=5)
 
 def test_actual_focus_duration():
-    """Test the `actual_focus_duration` property."""
+    """Test the `actual_focus_duration` property
+    
+    TODO Update with acceptance criteria
+    """
 
     # When a segment is first created, there is no focus time.
     s = Segment()
@@ -79,7 +97,10 @@ def test_actual_focus_duration():
     assert s.actual_focus_duration == timedelta(seconds=70)
 
 def test_actual_break_duration():
-    """Test the `actual_break_duration` property."""
+    """Test the `actual_break_duration` property
+    
+    TODO Update with acceptance criteria
+    """
 
     # When a segment is first created, there is no break time.
     s = Segment()
@@ -109,6 +130,8 @@ def test_normal_update_sequence():
     """Verify the 'normal' sequence of updates that a Segment can undergo.
 
     TODO: This test is a bit long - can we break it up?
+    
+    TODO Update with acceptance criteria
     """
 
     # Segment is instantiated with nothing, and is then begun at 0900 on
@@ -223,6 +246,8 @@ def test_normal_update_sequence():
 def test_premature_completion():
     """Test sequence where a Segment is 'manually' completed before it's
     nominal time
+    
+    TODO Update with acceptance criteria
     """
 
     # Segment can be completed before it is even begun.
@@ -258,6 +283,8 @@ def test_premature_completion():
 def test_cancellation():
     """Test sequence for a Segment being cancelled before it is
     completed
+    
+    TODO Update with acceptance criteria
     """
 
     # Segment can be manually cancelled after focus time has started but
