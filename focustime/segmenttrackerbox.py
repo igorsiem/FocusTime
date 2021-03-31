@@ -40,7 +40,8 @@ class SegmentTrackerBox(toga.Box):
         button_box = toga.Box(style=Pack(direction=ROW))
         self.start_btn = toga.Button("Start", enabled=False,
             on_press=self.on_start_btn_press)
-        self.pause_btn = toga.Button("Pause", enabled=False)
+        self.pause_btn = toga.Button("Pause", enabled=False,
+            on_press=self.on_pause_btn_press)
         self.complete_btn = toga.Button("Complete", enabled=False)
         self.cancel_btn = toga.Button("Cancel", enabled=False)
         button_box.add(self.start_btn)
@@ -56,8 +57,21 @@ class SegmentTrackerBox(toga.Box):
         self.update()
 
     def on_start_btn_press(self, widget):
-        """Start the current focus segment when the Start button is pressed."""
+        """Start the current focus segment when the Start button is pressed.
+
+        Args:
+            widget (Widget): The control that sent the signal
+        """
         self.start_segment()
+
+    def on_pause_btn_press(self, widget):
+        """Pause the operation of the current segment when the Pause button is
+        clicked
+
+        Args:
+            widget (Widget): The control that sent the signal
+        """
+        self.pause_or_continue_segment()
 
     def set_stage_label_text(self):
         """Set the 'stage' label with a human-readable description of the
@@ -110,36 +124,42 @@ class SegmentTrackerBox(toga.Box):
         if self.segment.state == Segment.State.NOT_STARTED:
             self.start_btn.enabled = True
             self.pause_btn.enabled = False
+            self.pause_btn.label = "Pause"
             self.complete_btn.enabled = False
             self.cancel_btn.enabled = False
 
         elif self.segment.state == Segment.State.STARTED_FOCUS:
             self.start_btn.enabled = False
-            self.pause_btn.enabled = False
+            self.pause_btn.enabled = True
+            self.pause_btn.label = "Pause"
             self.complete_btn.enabled = False
             self.cancel_btn.enabled = False
 
         elif self.segment.state == Segment.State.PAUSED_FOCUS:
             self.start_btn.enabled = False
-            self.pause_btn.enabled = False
+            self.pause_btn.enabled = True
+            self.pause_btn.label = "Continue"
             self.complete_btn.enabled = False
             self.cancel_btn.enabled = False
 
         elif self.segment.state == Segment.State.STARTED_BREAK:
             self.start_btn.enabled = False
-            self.pause_btn.enabled = False
+            self.pause_btn.enabled = True
+            self.pause_btn.label = "Pause"
             self.complete_btn.enabled = False
             self.cancel_btn.enabled = False
 
         elif self.segment.state == Segment.State.PAUSED_BREAK:
             self.start_btn.enabled = False
-            self.pause_btn.enabled = False
+            self.pause_btn.enabled = True
+            self.pause_btn.label = "Continue"
             self.complete_btn.enabled = False
             self.cancel_btn.enabled = False
 
         elif self.segment.state == Segment.State.COMPLETED:
             self.start_btn.enabled = False
             self.pause_btn.enabled = False
+            self.pause_btn.label = "Pause"
             self.complete_btn.enabled = False
             self.cancel_btn.enabled = False
 
@@ -158,9 +178,18 @@ class SegmentTrackerBox(toga.Box):
     def start_segment(self):
         """Start the focus segment by starting the `segment` object with the
         current time."""
-
-        #self.segment.begin(
-        #    duration=timedelta(seconds=20),
-        #    break_duration=timedelta(seconds=5))
         self.segment.begin()
+        self.update()
+
+    def pause_or_continue_segment(self):
+        """Trigger the pause or un-pause action in the segment, depending on
+        current state
+        """
+        if (self.segment.state == Segment.State.STARTED_FOCUS or
+                self.segment.state == Segment.State.STARTED_BREAK):
+            self.segment.pause()
+        elif (self.segment.state == Segment.State.PAUSED_FOCUS or
+                self.segment.state == Segment.State.PAUSED_BREAK):
+            self.segment.unpause()
+            
         self.update()
