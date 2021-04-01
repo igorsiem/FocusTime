@@ -82,21 +82,29 @@ class Segment:
 
     def begin(self,
             start = None,
-            nominal_focus_duration=timedelta(minutes=25),
-            nominal_break_duration=timedelta(minutes=5)):
+            nominal_focus_duration=None
+            nominal_break_duration=None
         """Commence the focusing segment
 
         Args:
             start (datetime, optional): The starting time of the segment.
                 Defaults to `None`, in which case `datetime.now()` is used
             nominal_focus_duration (timedelta, optional): How long we want to
-                focus for. Defaults to timedelta(minutes=25).
+                focus for. Defaults to `None`, in which case
+                timedelta(minutes=25) is used
             nominal_break_duration (timedelta, optional): How long we want to
-                take for a break. Defaults to timedelta(minutes=5).
+                take for a break. Defaults to `None`, in which case
+                timedelta(minutes=5) is used
         """
 
         if start == None:
             start = datetime.now()
+
+        if nominal_focus_duration == None:
+            nominal_focus_duration = timedelta(minutes=25)
+
+        if nominal_break_duration == None:
+            nominal_break_duration = timedelta(minutes=5)
 
         if self.state != Segment.State.NOT_STARTED:
             logging.warning("called `begin` on `Segment` object when state " \
