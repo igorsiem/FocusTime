@@ -82,7 +82,7 @@ class Segment:
 
     def begin(self,
             start = None,
-            nominal_focus_duration=None
+            nominal_focus_duration=None,
             nominal_break_duration=None
         """Commence the focusing segment
 
